@@ -4,7 +4,7 @@ lapacho
 Algorithms for the linear assignment problem implemented in C as Python module.
 
 Installing and Running
-======================
+----------------------
 
 To build and install this module, run the following::
 
@@ -16,14 +16,14 @@ To build and install this module, run the following::
 Source is available at http://github.com/petrh/lapacho.
 
 Included Algorithms
-===================
+-------------------
 
 Linear assignment problem:
 
-  * Hungarian (Kuhn-Munkres)
+* Hungarian (Kuhn-Munkres)
 
 Example Usage
-=============
+-------------
 
     >>> import lapacho
     >>> lapacho.hungarian([[10, 10,  8],
@@ -32,11 +32,11 @@ Example Usage
     [(0, 0), (1, 2), (2, 1)]
 
 Authors
-=======
+-------
 
 * Petr Hosek <petrhosek@gmail.com>
 
 License
-=======
+-------
 
 BSD license

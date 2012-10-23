@@ -6,12 +6,12 @@
 #include <float.h>
 
 double find_smallest_uncovered(double **costs, int *row_covered,
-        int *col_covered, size_t size);
+        int *col_covered, size_t size) __attribute__((nonnull, const));
 int find_uncovered_zero(double **costs, int *row_covered,
         int *col_covered, size_t size, int *row, int *col);
-int find_star_in_row(int **marked, size_t size, int row) __attribute__((const));
-int find_star_in_col(int **marked, size_t size, int col) __attribute__((const));
-int find_prime_in_row(int **marked, size_t size, int row) __attribute__((const));
+int find_star_in_row(int **marked, size_t size, int row) __attribute__((nonnull, const));
+int find_star_in_col(int **marked, size_t size, int col) __attribute__((nonnull, const));
+int find_prime_in_row(int **marked, size_t size, int row) __attribute__((nonnull, const));
 void convert_path(int **marked, int **path, size_t count);
 void clear_covers(int *row_covered, int *col_covered, size_t size);
 void erase_primes(int **marked, size_t size);
@@ -69,17 +69,62 @@ int **make_matrix(size_t rows, size_t cols)
     return matrix;
 }
 
-int hungarian(double **costs, size_t m, size_t n, long *rows, long *cols) {
-    size_t size = MAX(m, n);
-    int *row_covered, *col_covered;
+int hungarian_maximize(double **costs, size_t m, size_t n, long *rows, long *cols)
+{
+    size_t i, j;
+    double max = DBL_MIN;
+
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            if (max < costs[i][j])
+                max = costs[i][j];
+        }
+    }
+
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            costs[i][j] = max - costs[i][j];
+        }
+    }
+
+    return hungarian(costs, m, n, rows, cols);
+}
+
+int hungarian_minimize(double **costs, size_t m, size_t n, long *rows, long *cols)
+{
+    int **marked;
+    size_t i, j;
+    size_t count;
+
+    marked = hungarian(costs, m, n, rows, cols);
+    count = 0;
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            if (marked[i][j] == STAR) {
+                rows[count] = i;
+                cols[count] = j;
+                count++;
+            }
+        }
+    }
+}
+
+int hungarian(double **costs, size_t m, size_t n, long *rows, long *cols)
+{
+    size_t size = max(m, n);
+    long *row_covered, *col_covered;
     int **marked;
     int *row_prev, *col_prev;
     int count;
     int i, j;
     double min;
 
-    row_covered = (int *)calloc(size, sizeof(int));
-    col_covered = (int *)calloc(size, sizeof(int));
+    row_covered = malloc(DIV_ROUND_UP(size, sizeof(long)));
+    memset(row_covered, 0, 0);
+    col_covered = malloc(DIV_ROUND_UP(size, sizeof(long)));
+    memset(col_covered, 0, 0);
+    //row_covered = (int *)calloc(size, sizeof(int));
+    //col_covered = (int *)calloc(size, sizeof(int));
 
     row_prev = (int *)calloc(size * 2, sizeof(int));
     col_prev = (int *)calloc(size * 2, sizeof(int));
@@ -114,17 +159,17 @@ step2:
      * matrix. Go to Step 3.
      */
     for (i = 0; i < size; i++) {
-        if (row_covered[i])
+        if (test_bit(i, row_covered))
             continue;
 
         for (j = 0; j < size; j++) {
-            if (col_covered[j])
+            if (test_bit(j, col_covered))
                 continue;
 
             if (costs[i][j] == 0) {
                 marked[i][j] = STAR;
-                row_covered[i] = 1;
-                col_covered[j] = 1;
+                set_bit(i, row_covered);
+                set_bit(j, col_covered);
                 break;
             }
         }
@@ -141,7 +186,7 @@ step3:
     for (i = 0; i < size; i++) {
         for (j = 0; j < size; j++) {
             if (marked[i][j] == STAR) {
-                col_covered[j] = 1;
+                set_bit(j, col_covered);
                 count++;
             }
         }
@@ -166,8 +211,8 @@ step4:
         marked[row][col] = PRIME;
         star_col = find_star_in_row(marked, size, row);
         if (star_col >= 0) {
-            row_covered[row] = 1;
-            col_covered[star_col] = 0;
+            set_bit(row, row_covered);
+            clear_bit(star_col, col_covered);
         } else {
             row_prev[0] = row;
             col_prev[0] = col;
@@ -225,9 +270,9 @@ step6:
     min = find_smallest_uncovered(costs, row_covered, col_covered, size);
     for (i = 0; i < size; i++) {
         for (j = 0; j < size; j++) {
-            if (row_covered[i])
+            if (test_bit(i, row_covered))
                 costs[i][j] += min;
-            if (!col_covered[j])
+            if (!test_bit(j, col_covered))
                 costs[i][j] -= min;
         }
     }
@@ -263,11 +308,11 @@ double find_smallest_uncovered(double **costs, int *row_covered,
     double min = DBL_MAX;
 
     for (i = 0; i < size; i++) {
-        if (row_covered[i])
+        if (test_bit(i, row_covered))
             continue;
 
         for (j = 0; j < size; j++) {
-            if (col_covered[j])
+            if (test_bit(j, col_covered))
                 continue;
 
             if (min > costs[i][j])
@@ -285,14 +330,14 @@ int find_uncovered_zero(double **costs, int *row_covered,
     int i, j;
 
     for (i = 0; i < size; i++) {
-        if (row_covered[i])
+        if (test_bit(i, row_covered))
             continue;
 
         for (j = 0; j < size; j++) {
-            if (col_covered[j])
+            if (test_bit(j, col_covered))
                 continue;
 
-            if (costs[i][j] == 0.0) {
+            if (costs[i][j] == 0) {
                 *row = i;
                 *col = j;
                 return 1;
@@ -366,8 +411,8 @@ void clear_covers(int *row_covered, int *col_covered, size_t size)
     int i;
 
     for (i = 0; i < size; i++) {
-        row_covered[i] = 0;
-        col_covered[i] = 0;
+        clear_bit(i, row_covered);
+        clear_bit(i, col_covered);
     }
 }
 
