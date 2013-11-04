@@ -20,7 +20,7 @@ read_matrix(PyObject *py_matrix, Py_ssize_t *m, Py_ssize_t *n) {
             PyErr_SetObject(PyExc_TypeError, py_row);
             return NULL;
         }
-        total_cols = MAX(total_cols, PyList_Size(py_row));
+        total_cols = max(total_cols, PyList_Size(py_row));
     }
 
     row_bytes = total_rows * sizeof(double *);
