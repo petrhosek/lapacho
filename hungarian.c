@@ -5,15 +5,15 @@
 #include <string.h>
 #include <float.h>
 
-double find_smallest_uncovered(double **costs, int *row_covered,
-        int *col_covered, size_t size) __attribute__((nonnull, const));
-int find_uncovered_zero(double **costs, int *row_covered,
-        int *col_covered, size_t size, int *row, int *col);
+double find_smallest_uncovered(double **costs, long *row_covered,
+        long *col_covered, size_t size) __attribute__((nonnull, const));
+int find_uncovered_zero(double **costs, long *row_covered,
+        long *col_covered, size_t size, int *row, int *col);
 int find_star_in_row(int **marked, size_t size, int row) __attribute__((nonnull, const));
 int find_star_in_col(int **marked, size_t size, int col) __attribute__((nonnull, const));
 int find_prime_in_row(int **marked, size_t size, int row) __attribute__((nonnull, const));
 void convert_path(int **marked, int **path, size_t count);
-void clear_covers(int *row_covered, int *col_covered, size_t size);
+void clear_covers(long *row_covered, long *col_covered, size_t size);
 void erase_primes(int **marked, size_t size);
 
 enum {
@@ -90,25 +90,6 @@ int hungarian_maximize(double **costs, size_t m, size_t n, long *rows, long *col
     return hungarian(costs, m, n, rows, cols);
 }
 
-int hungarian_minimize(double **costs, size_t m, size_t n, long *rows, long *cols)
-{
-    int **marked;
-    size_t i, j;
-    size_t count;
-
-    marked = hungarian(costs, m, n, rows, cols);
-    count = 0;
-    for (i = 0; i < m; i++) {
-        for (j = 0; j < n; j++) {
-            if (marked[i][j] == STAR) {
-                rows[count] = i;
-                cols[count] = j;
-                count++;
-            }
-        }
-    }
-}
-
 int hungarian(double **costs, size_t m, size_t n, long *rows, long *cols)
 {
     size_t size = max(m, n);
@@ -123,8 +104,6 @@ int hungarian(double **costs, size_t m, size_t n, long *rows, long *cols)
     memset(row_covered, 0, 0);
     col_covered = malloc(DIV_ROUND_UP(size, sizeof(long)));
     memset(col_covered, 0, 0);
-    //row_covered = (int *)calloc(size, sizeof(int));
-    //col_covered = (int *)calloc(size, sizeof(int));
 
     row_prev = (int *)calloc(size * 2, sizeof(int));
     col_prev = (int *)calloc(size * 2, sizeof(int));
@@ -132,7 +111,7 @@ int hungarian(double **costs, size_t m, size_t n, long *rows, long *cols)
     costs = pad_matrix(costs, m, n, size);
     marked = make_matrix(size, size);
 
-step1:
+/* step1: */
     /*
      * For each row of the matrix, find the smallest element and
      * subtract it from every element in its row. Go to Step 2.
@@ -152,7 +131,7 @@ step1:
         }
     }
 
-step2:
+/* step2: */
     /*
      * Find a zero (Z) in the resulting matrix. If there is no starred
      * zero in its row or column, star Z. Repeat for each element in the
@@ -290,7 +269,7 @@ step7:
         }
     }
 
-out:
+/* out: */
     free(row_covered);
     free(col_covered);
     free(row_prev);
@@ -301,8 +280,8 @@ out:
 }
 
 /* Find the smallest uncovered value in the matrix. */
-double find_smallest_uncovered(double **costs, int *row_covered,
-        int *col_covered, size_t size)
+double find_smallest_uncovered(double **costs, long *row_covered,
+        long *col_covered, size_t size)
 {
     int i, j;
     double min = DBL_MAX;
@@ -324,8 +303,8 @@ double find_smallest_uncovered(double **costs, int *row_covered,
 }
 
 /* Find the first uncovered element with value 0 */
-int find_uncovered_zero(double **costs, int *row_covered,
-        int *col_covered, size_t size, int *row, int *col)
+int find_uncovered_zero(double **costs, long *row_covered,
+        long *col_covered, size_t size, int *row, int *col)
 {
     int i, j;
 
@@ -406,7 +385,7 @@ void convert_path(int **marked, int **path, size_t count)
 }
 
 /* Clear all covered matrix cells */
-void clear_covers(int *row_covered, int *col_covered, size_t size)
+void clear_covers(long *row_covered, long *col_covered, size_t size)
 {
     int i;
 

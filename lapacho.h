@@ -69,15 +69,15 @@ struct matrix_view {
     _min1 < _min2 ? _min1 : _min2; })
 #endif
 
-static inline void set_bit(int nr, unsigned long *addr) {
+static inline void set_bit(int nr, long *addr) {
     addr[nr / BITS_PER_LONG] |= 1UL << (nr % BITS_PER_LONG);
 }
 
-static inline void clear_bit(int nr, unsigned long *addr) {
+static inline void clear_bit(int nr, long *addr) {
     addr[nr / BITS_PER_LONG] &= ~(1UL << (nr % BITS_PER_LONG));
 }
 
-static inline int test_bit(unsigned int nr, const unsigned long *addr) {
+static inline int test_bit(unsigned int nr, const long *addr) {
     return ((1UL << (nr % BITS_PER_LONG)) &
         (((unsigned long *)addr)[nr / BITS_PER_LONG])) != 0;
 }
